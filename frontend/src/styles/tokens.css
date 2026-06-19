@@ -1,0 +1,163 @@
+/* ===================================================================
+   MediCare HMS — Design Tokens
+   Palette: clinical sage/ink on warm paper — calm, trustworthy, never
+   cold. Display serif for headings (credibility, human touch),
+   functional sans for body and data, monospace for record/ID numbers.
+   =================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Color palette */
+  --color-paper: #F7F4EE;
+  --color-paper-raised: #FFFFFF;
+  --color-ink: #1E2A28;
+  --color-ink-soft: #4A5754;
+  --color-ink-faint: #7C8884;
+
+  --color-primary: #0F6E5E;
+  --color-primary-dark: #0A4F43;
+  --color-primary-light: #E3EFEB;
+  --color-primary-soft: #CFE3DC;
+
+  --color-accent: #C9622B;
+  --color-accent-light: #F7E6D8;
+
+  --color-success: #2E7D4F;
+  --color-success-light: #E2F1E7;
+  --color-warning: #B8860B;
+  --color-warning-light: #FBF0DC;
+  --color-danger: #B3402E;
+  --color-danger-light: #FBE6E1;
+  --color-info: #2C6E8E;
+  --color-info-light: #E2EFF4;
+
+  --color-border: #DDD6C8;
+  --color-border-strong: #C7BEA9;
+
+  /* Typography */
+  --font-display: 'Source Serif 4', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(30, 42, 40, 0.06);
+  --shadow-md: 0 4px 12px rgba(30, 42, 40, 0.08);
+  --shadow-lg: 0 12px 32px rgba(30, 42, 40, 0.12);
+
+  /* Layout */
+  --sidebar-width: 248px;
+  --header-height: 68px;
+  --max-content-width: 1180px;
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+  line-height: 1.55;
+  font-size: 15px;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  color: var(--color-ink);
+  line-height: 1.2;
+  margin: 0;
+  font-weight: 600;
+}
+
+h1 { font-size: 2.25rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.65rem; letter-spacing: -0.005em; }
+h3 { font-size: 1.3rem; }
+h4 { font-size: 1.05rem; }
+
+p { margin: 0; }
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+button {
+  font-family: inherit;
+}
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+}
+
+img { max-width: 100%; display: block; }
+
+/* Visible keyboard focus ring everywhere */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Scrollbar (subtle, webkit) */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-ink-faint); }
+
+.container {
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
