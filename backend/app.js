@@ -34,20 +34,37 @@ app.use(mongoSanitize());
 app.use(xss());
 
 // ---------- CORS ----------
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+const configuredOrigins = (process.env.CLIENT_URL || 'http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173')
   .split(',')
-  .map((origin) => origin.trim());
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+
+  const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
+
+  if (configuredOrigins.some((allowedOrigin) => allowedOrigin.replace(/\/$/, '').toLowerCase() === normalizedOrigin)) {
+    return true;
+  }
+
+  return /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalizedOrigin) ||
+    /^https:\/\/([a-z0-9-]+\.)?vercel\.app$/i.test(normalizedOrigin) ||
+    /^https:\/\/([a-z0-9-]+\.)?onrender\.com$/i.test(normalizedOrigin);
+};
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(null, false);
       }
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
 
