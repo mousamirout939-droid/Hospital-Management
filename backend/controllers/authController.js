@@ -10,15 +10,7 @@ const { sendEmail } = require('../config/email');
  * @access  Public
  */
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, phone, gender, dateOfBirth, bloodGroup, address } = req.body;
-
-  const existingUser = await User.findOne({ email: email.toLowerCase() });
-  if (existingUser) {
-    res.status(400);
-    throw new Error('An account with this email already exists. Please log in instead.');
-  }
-
-  const user = await User.create({
+  const {
     name,
     email,
     password,
@@ -27,13 +19,73 @@ const registerUser = asyncHandler(async (req, res) => {
     dateOfBirth,
     bloodGroup,
     address,
-    role: 'patient', // public registration always creates a patient; admins are seeded/created internally
+    role = 'patient',
+    specialization,
+    department,
+    qualification,
+    experienceYears,
+    consultationFee,
+    bio,
+  } = req.body;
+
+  const normalizedEmail = email?.trim().toLowerCase();
+  if (!normalizedEmail) {
+    res.status(400);
+    throw new Error('Email is required');
+  }
+
+  const existingUser = await User.findOne({ email: normalizedEmail });
+  if (existingUser) {
+    res.status(400);
+    throw new Error('An account with this email already exists. Please log in instead.');
+  }
+
+  const selectedRole = role === 'doctor' ? 'doctor' : 'patient';
+
+  if (selectedRole === 'doctor') {
+    if (!specialization || !department || !consultationFee) {
+      res.status(400);
+      throw new Error('Doctor registration requires specialization, department, and consultation fee.');
+    }
+  }
+
+  const user = await User.create({
+    name,
+    email: normalizedEmail,
+    password,
+    phone,
+    gender,
+    dateOfBirth,
+    bloodGroup,
+    address,
+    role: selectedRole,
   });
+
+  if (selectedRole === 'doctor') {
+    const doctorProfile = await require('../models/Doctor').create({
+      user: user._id,
+      name,
+      email: normalizedEmail,
+      phone,
+      specialization,
+      department,
+      qualification: qualification || '',
+      experienceYears: Number(experienceYears || 0),
+      consultationFee: Number(consultationFee),
+      bio: bio || '',
+      availability: [],
+    });
+
+    user.doctorProfile = doctorProfile._id;
+  }
 
   sendEmail({
     to: user.email,
-    subject: 'Welcome to Hospital Management System',
-    html: `<p>Hi ${user.name},</p><p>Your account has been created successfully. You can now log in and book appointments.</p>`,
+    subject: selectedRole === 'doctor' ? 'Welcome to MediCare as a Doctor' : 'Welcome to Hospital Management System',
+    html:
+      selectedRole === 'doctor'
+        ? `<p>Hi Dr. ${user.name},</p><p>Your doctor account has been created successfully. You can now log in and manage your appointments and patient records.</p>`
+        : `<p>Hi ${user.name},</p><p>Your account has been created successfully. You can now log in and book appointments.</p>`,
   });
 
   sendTokenResponse(user, 201, res);

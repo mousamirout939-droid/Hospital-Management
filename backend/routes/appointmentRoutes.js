@@ -29,12 +29,12 @@ router.post(
   bookAppointment
 );
 
-router.get('/my', restrictTo('patient'), getMyAppointments);
+router.get('/my', restrictTo('patient', 'doctor'), getMyAppointments);
 router.put('/:id/cancel', restrictTo('patient'), cancelMyAppointment);
 
-router.get('/', restrictTo('admin'), getAllAppointments);
+router.get('/', restrictTo('admin', 'doctor'), getAllAppointments);
 router.get('/admin/today', restrictTo('admin'), getTodaysAppointments);
-router.put('/:id/status', restrictTo('admin'), updateAppointmentStatus);
+router.put('/:id/status', restrictTo('admin', 'doctor'), updateAppointmentStatus);
 
 router.get('/:id', getAppointmentById); // owner-or-admin check happens in controller
 

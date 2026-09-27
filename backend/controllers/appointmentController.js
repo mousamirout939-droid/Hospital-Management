@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const { getPagination, buildPaginationMeta } = require('../utils/helpers');
+const { parseLocalDate } = require('../utils/dateUtils');
 const { createNotification } = require('../utils/notify');
 const { sendEmail } = require('../config/email');
 
@@ -19,8 +20,15 @@ const bookAppointment = asyncHandler(async (req, res) => {
     throw new Error('Doctor not found or is currently unavailable');
   }
 
-  const requestedDate = new Date(appointmentDate);
-  if (requestedDate < new Date().setHours(0, 0, 0, 0)) {
+  const requestedDate = parseLocalDate(appointmentDate);
+  if (!requestedDate) {
+    res.status(400);
+    throw new Error('Invalid appointment date format. Use YYYY-MM-DD');
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (requestedDate < today) {
     res.status(400);
     throw new Error('Cannot book an appointment in the past');
   }
@@ -77,12 +85,20 @@ const getMyAppointments = asyncHandler(async (req, res) => {
   const { page, limit, skip } = getPagination(req.query);
   const { status } = req.query;
 
-  const filter = { patient: req.user.id };
+  let filter = { patient: req.user.id };
+  if (req.user.role === 'doctor') {
+    const doctorProfile = await Doctor.findOne({ user: req.user.id });
+    if (!doctorProfile) {
+      return res.status(200).json({ success: true, data: [], pagination: buildPaginationMeta(0, page, limit) });
+    }
+    filter = { doctor: doctorProfile._id };
+  }
   if (status) filter.status = status;
 
   const [appointments, totalCount] = await Promise.all([
     Appointment.find(filter)
       .populate('doctor', 'name specialization department photo consultationFee')
+      .populate('patient', 'name email phone')
       .sort({ appointmentDate: -1 })
       .skip(skip)
       .limit(limit),
@@ -106,14 +122,24 @@ const getAllAppointments = asyncHandler(async (req, res) => {
   const { status, doctorId, date, search } = req.query;
 
   const filter = {};
+  if (req.user.role === 'doctor') {
+    const doctorProfile = await Doctor.findOne({ user: req.user.id });
+    if (!doctorProfile) {
+      return res.status(200).json({ success: true, data: [], pagination: buildPaginationMeta(0, page, limit) });
+    }
+    filter.doctor = doctorProfile._id;
+  }
   if (status) filter.status = status;
   if (doctorId) filter.doctor = doctorId;
   if (date) {
-    const start = new Date(date);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(date);
-    end.setHours(23, 59, 59, 999);
-    filter.appointmentDate = { $gte: start, $lte: end };
+    const queryDate = parseLocalDate(date);
+    if (queryDate) {
+      const start = new Date(queryDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(queryDate);
+      end.setHours(23, 59, 59, 999);
+      filter.appointmentDate = { $gte: start, $lte: end };
+    }
   }
 
   let query = Appointment.find(filter)
@@ -156,7 +182,8 @@ const getAppointmentById = asyncHandler(async (req, res) => {
   }
 
   const isOwner = appointment.patient._id.toString() === req.user.id.toString();
-  if (req.user.role !== 'admin' && !isOwner) {
+  const isDoctorOwner = req.user.role === 'doctor' && appointment.doctor && appointment.doctor._id.toString() === (await Doctor.findOne({ user: req.user.id }))?._id?.toString();
+  if (req.user.role !== 'admin' && !isOwner && !isDoctorOwner) {
     res.status(403);
     throw new Error('You do not have permission to view this appointment');
   }
@@ -178,10 +205,18 @@ const updateAppointmentStatus = asyncHandler(async (req, res) => {
     throw new Error('Invalid status value');
   }
 
-  const appointment = await Appointment.findById(req.params.id).populate('doctor', 'name');
+  const appointment = await Appointment.findById(req.params.id).populate('doctor', 'name user');
   if (!appointment) {
     res.status(404);
     throw new Error('Appointment not found');
+  }
+
+  if (req.user.role === 'doctor') {
+    const doctorProfile = await Doctor.findOne({ user: req.user.id });
+    if (!doctorProfile || appointment.doctor?._id?.toString() !== doctorProfile._id.toString()) {
+      res.status(403);
+      throw new Error('You can only update appointments assigned to you.');
+    }
   }
 
   appointment.status = status;

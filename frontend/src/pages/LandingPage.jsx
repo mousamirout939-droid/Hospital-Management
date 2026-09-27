@@ -95,6 +95,11 @@ const LandingPage = () => {
                   Book Your First Visit <IconArrowRight width={16} height={16} />
                 </Button>
               </Link>
+              <Link to="/doctor/login">
+                <Button variant="secondary" size="lg">
+                  Doctor Login
+                </Button>
+              </Link>
               <Link to="/login">
                 <Button variant="secondary" size="lg">
                   Patient Login

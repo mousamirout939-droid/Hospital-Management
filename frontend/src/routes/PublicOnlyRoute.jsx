@@ -8,7 +8,7 @@ const PublicOnlyRoute = () => {
   if (loading) return <LoadingScreen message="Loading…" />;
 
   if (isAuthenticated) {
-    const redirectPath = user.role === 'admin' ? '/admin/dashboard' : '/patient/dashboard';
+    const redirectPath = user.role === 'admin' ? '/admin/dashboard' : user.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard';
     return <Navigate to={redirectPath} replace />;
   }
 

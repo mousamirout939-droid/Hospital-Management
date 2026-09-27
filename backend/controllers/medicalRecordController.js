@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const MedicalRecord = require('../models/MedicalRecord');
+const Doctor = require('../models/Doctor');
 const { getPagination, buildPaginationMeta } = require('../utils/helpers');
 
 /**
@@ -8,8 +9,18 @@ const { getPagination, buildPaginationMeta } = require('../utils/helpers');
  * @access  Private/Admin
  */
 const createMedicalRecord = asyncHandler(async (req, res) => {
+  const payload = { ...req.body };
+  if (req.user.role === 'doctor') {
+    const doctorProfile = await Doctor.findOne({ user: req.user.id });
+    if (!doctorProfile) {
+      res.status(403);
+      throw new Error('Your doctor profile is not linked to your account.');
+    }
+    payload.doctor = doctorProfile._id;
+  }
+
   const record = await MedicalRecord.create({
-    ...req.body,
+    ...payload,
     createdBy: req.user.id,
   });
 
@@ -28,11 +39,19 @@ const createMedicalRecord = asyncHandler(async (req, res) => {
 const getMyMedicalRecords = asyncHandler(async (req, res) => {
   const { page, limit, skip } = getPagination(req.query);
 
-  const filter = { patient: req.user.id };
+  let filter = { patient: req.user.id };
+  if (req.user.role === 'doctor') {
+    const doctorProfile = await Doctor.findOne({ user: req.user.id });
+    if (!doctorProfile) {
+      return res.status(200).json({ success: true, data: [], pagination: buildPaginationMeta(0, page, limit) });
+    }
+    filter = { doctor: doctorProfile._id };
+  }
 
   const [records, totalCount] = await Promise.all([
     MedicalRecord.find(filter)
       .populate('doctor', 'name specialization department')
+      .populate('patient', 'name email')
       .sort({ visitDate: -1 })
       .skip(skip)
       .limit(limit),
@@ -55,10 +74,18 @@ const getPatientMedicalRecords = asyncHandler(async (req, res) => {
   const { page, limit, skip } = getPagination(req.query);
 
   const filter = { patient: req.params.patientId };
+  if (req.user.role === 'doctor') {
+    const doctorProfile = await Doctor.findOne({ user: req.user.id });
+    if (!doctorProfile) {
+      return res.status(200).json({ success: true, data: [], pagination: buildPaginationMeta(0, page, limit) });
+    }
+    filter.doctor = doctorProfile._id;
+  }
 
   const [records, totalCount] = await Promise.all([
     MedicalRecord.find(filter)
       .populate('doctor', 'name specialization department')
+      .populate('patient', 'name email')
       .sort({ visitDate: -1 })
       .skip(skip)
       .limit(limit),
@@ -88,7 +115,8 @@ const getMedicalRecordById = asyncHandler(async (req, res) => {
   }
 
   const isOwner = record.patient._id.toString() === req.user.id.toString();
-  if (req.user.role !== 'admin' && !isOwner) {
+  const isDoctorOwner = req.user.role === 'doctor' && record.doctor && record.doctor._id.toString() === (await Doctor.findOne({ user: req.user.id }))?._id?.toString();
+  if (req.user.role !== 'admin' && !isOwner && !isDoctorOwner) {
     res.status(403);
     throw new Error('You do not have permission to view this record');
   }
@@ -102,17 +130,27 @@ const getMedicalRecordById = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const updateMedicalRecord = asyncHandler(async (req, res) => {
-  const record = await MedicalRecord.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
+  const record = await MedicalRecord.findById(req.params.id);
 
   if (!record) {
     res.status(404);
     throw new Error('Medical record not found');
   }
 
-  res.status(200).json({ success: true, data: record });
+  if (req.user.role === 'doctor') {
+    const doctorProfile = await Doctor.findOne({ user: req.user.id });
+    if (!doctorProfile || record.doctor.toString() !== doctorProfile._id.toString()) {
+      res.status(403);
+      throw new Error('You can only update your own patient records.');
+    }
+  }
+
+  const updated = await MedicalRecord.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({ success: true, data: updated });
 });
 
 /**

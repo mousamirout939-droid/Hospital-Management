@@ -1,7 +1,11 @@
+const crypto = require('crypto');
 const asyncHandler = require('express-async-handler');
 const Doctor = require('../models/Doctor');
+const User = require('../models/User');
 const Appointment = require('../models/Appointment');
 const { getPagination, buildPaginationMeta } = require('../utils/helpers');
+const { parseLocalDate } = require('../utils/dateUtils');
+const { sendEmail } = require('../config/email');
 
 /**
  * @desc    Get all doctors (public list with search/filter/pagination)
@@ -98,7 +102,38 @@ const getDoctorById = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const createDoctor = asyncHandler(async (req, res) => {
-  const doctor = await Doctor.create(req.body);
+  const { name, email, password, ...rest } = req.body;
+
+  const normalizedEmail = email?.trim().toLowerCase();
+  const existingUser = await User.findOne({ email: normalizedEmail });
+  const existingDoctor = await Doctor.findOne({ email: normalizedEmail });
+
+  if (existingUser || existingDoctor) {
+    res.status(400);
+    throw new Error('A doctor account with this email already exists.');
+  }
+
+  const tempPassword = password || `Dr@${crypto.randomBytes(5).toString('hex')}`;
+  const user = await User.create({
+    name,
+    email: normalizedEmail,
+    password: tempPassword,
+    role: 'doctor',
+  });
+
+  const doctor = await Doctor.create({
+    ...rest,
+    name,
+    email: normalizedEmail,
+    user: user._id,
+  });
+
+  await sendEmail({
+    to: normalizedEmail,
+    subject: 'Your MediCare doctor account is ready',
+    html: `<p>Hi Dr. ${name},</p><p>Your doctor account has been created. Your temporary password is <strong>${tempPassword}</strong>.</p><p>Please log in and change it after your first sign-in.</p>`,
+  });
+
   res.status(201).json({ success: true, data: doctor });
 });
 
@@ -174,7 +209,12 @@ const getAvailableSlots = asyncHandler(async (req, res) => {
     throw new Error('Doctor not found');
   }
 
-  const requestedDate = new Date(date);
+  const requestedDate = parseLocalDate(date);
+  if (!requestedDate) {
+    res.status(400);
+    throw new Error('Invalid date format. Use YYYY-MM-DD');
+  }
+
   const dayName = requestedDate.toLocaleDateString('en-US', { weekday: 'long' });
 
   const dayAvailability = doctor.availability.filter((slot) => slot.day === dayName);

@@ -8,7 +8,7 @@ import DoctorSelect from './DoctorSelect';
 import { medicalRecordService } from '../../services/medicalRecordService';
 import { extractErrorMessage } from '../../services/api';
 
-const CreateMedicalRecordModal = ({ onClose, onSaved }) => {
+const CreateMedicalRecordModal = ({ onClose, onSaved, doctorOnly = false }) => {
   const [form, setForm] = useState({
     patient: '',
     doctor: '',
@@ -25,14 +25,14 @@ const CreateMedicalRecordModal = ({ onClose, onSaved }) => {
     e.preventDefault();
     setError('');
 
-    if (!form.patient || !form.doctor) {
-      setError('Please select both a patient and a doctor');
+    if (!form.patient || (!doctorOnly && !form.doctor)) {
+      setError(doctorOnly ? 'Please select a patient' : 'Please select both a patient and a doctor');
       return;
     }
 
     setSubmitting(true);
     try {
-      await medicalRecordService.create({ ...form, vitals });
+      await medicalRecordService.create({ ...form, vitals, ...(doctorOnly ? { doctor: '' } : {}) });
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -47,7 +47,7 @@ const CreateMedicalRecordModal = ({ onClose, onSaved }) => {
 
       <form onSubmit={handleSubmit}>
         <PatientSelect value={form.patient} onChange={(id) => setForm({ ...form, patient: id })} required />
-        <DoctorSelect value={form.doctor} onChange={(id) => setForm({ ...form, doctor: id })} required />
+        {!doctorOnly && <DoctorSelect value={form.doctor} onChange={(id) => setForm({ ...form, doctor: id })} required />}
 
         <FormField
           label="Diagnosis"

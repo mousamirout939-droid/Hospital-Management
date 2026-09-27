@@ -7,6 +7,7 @@ import { doctorService } from '../../services/doctorService';
 import { appointmentService } from '../../services/appointmentService';
 import { extractErrorMessage } from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
+import { formatDateKey } from '../../utils/dateUtils';
 
 const getNextDays = (count) => {
   const days = [];
@@ -33,7 +34,7 @@ const BookAppointmentModal = ({ doctor, onClose, onSuccess }) => {
     setSelectedSlot('');
     setError('');
     try {
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = formatDateKey(date);
       const res = await doctorService.getAvailableSlots(doctor._id, dateStr);
       setSlots(res.data.data);
     } catch (err) {
@@ -69,7 +70,7 @@ const BookAppointmentModal = ({ doctor, onClose, onSuccess }) => {
     try {
       await appointmentService.book({
         doctorId: doctor._id,
-        appointmentDate: selectedDate.toISOString().split('T')[0],
+        appointmentDate: formatDateKey(selectedDate),
         timeSlot: selectedSlot,
         reasonForVisit: reason,
       });
@@ -97,7 +98,7 @@ const BookAppointmentModal = ({ doctor, onClose, onSuccess }) => {
             return (
               <button
                 type="button"
-                key={date.toISOString()}
+                key={formatDateKey(date)}
                 className={`date-chip ${isSelected ? 'selected' : ''}`}
                 onClick={() => handleDateSelect(date)}
               >

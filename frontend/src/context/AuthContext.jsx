@@ -92,6 +92,7 @@ export const AuthProvider = ({ children }) => {
     authError,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',
+    isDoctor: user?.role === 'doctor',
     isPatient: user?.role === 'patient',
     login,
     register,

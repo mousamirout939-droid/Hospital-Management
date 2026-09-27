@@ -1,15 +1,14 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import FormField from '../../components/common/FormField';
 import Button from '../../components/common/Button';
 import Alert from '../../components/common/Alert';
 import { IconStethoscope } from '../../components/common/Icons';
 
-const LoginPage = () => {
+const DoctorLoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -25,14 +24,12 @@ const LoginPage = () => {
     setSubmitting(false);
 
     if (result.success) {
-      const redirectTo = location.state?.from?.pathname;
-      if (redirectTo) {
-        navigate(redirectTo);
-      } else {
-        const redirectPath =
-          result.user.role === 'admin' ? '/admin/dashboard' : result.user.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard';
-        navigate(redirectPath);
+      if (result.user.role !== 'doctor') {
+        setError('This doctor portal is for doctor accounts only. Please use the patient login page.');
+        return;
       }
+
+      navigate('/doctor/dashboard');
     } else {
       setError(result.message);
     }
@@ -46,20 +43,19 @@ const LoginPage = () => {
           <span className="auth-visual-brandname">MediCare</span>
         </div>
         <div className="auth-visual-quote">
-          <h2>Healthcare, organized around you.</h2>
+          <h2>Doctor portal access.</h2>
           <p>
-            Sign in to manage your appointments, view medical records, track prescriptions, and stay on top of
-            your care — all in one secure place.
+            Manage appointments, review records, update prescriptions, and keep your patient care flow organized from one secure dashboard.
           </p>
         </div>
         <div className="auth-visual-stats">
           <div>
-            <div className="auth-visual-stat-num">6+</div>
-            <div className="auth-visual-stat-label">Departments</div>
+            <div className="auth-visual-stat-num">24/7</div>
+            <div className="auth-visual-stat-label">Availability</div>
           </div>
           <div>
-            <div className="auth-visual-stat-num">24/7</div>
-            <div className="auth-visual-stat-label">Record Access</div>
+            <div className="auth-visual-stat-num">Fast</div>
+            <div className="auth-visual-stat-label">Case updates</div>
           </div>
         </div>
       </div>
@@ -70,8 +66,8 @@ const LoginPage = () => {
             <IconStethoscope width={16} height={16} /> Back to home
           </Link>
 
-          <h1>Welcome back</h1>
-          <p className="auth-form-subtitle">Log in to access your MediCare account.</p>
+          <h1>Doctor Login</h1>
+          <p className="auth-form-subtitle">Sign in to your MediCare doctor account.</p>
 
           {error && <Alert type="danger">{error}</Alert>}
 
@@ -82,7 +78,7 @@ const LoginPage = () => {
               type="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="you@example.com"
+              placeholder="doctor@medicare.com"
               required
               autoComplete="email"
             />
@@ -109,7 +105,10 @@ const LoginPage = () => {
           </form>
 
           <p className="auth-form-footer">
-            Don't have an account? <Link to="/register">Create one</Link>
+            New doctor? <Link to="/doctor/register">Create account</Link>
+          </p>
+          <p className="auth-form-footer">
+            Need patient access? <Link to="/login">Patient login</Link>
           </p>
         </div>
       </div>
@@ -117,4 +116,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default DoctorLoginPage;

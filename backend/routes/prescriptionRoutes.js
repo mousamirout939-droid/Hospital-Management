@@ -19,19 +19,18 @@ router.get('/my', restrictTo('patient'), getMyPrescriptions);
 
 router.post(
   '/',
-  restrictTo('admin'),
+  restrictTo('admin', 'doctor'),
   [
     body('patient').notEmpty().withMessage('Patient is required'),
-    body('doctor').notEmpty().withMessage('Doctor is required'),
     body('medicines').isArray({ min: 1 }).withMessage('At least one medicine is required'),
   ],
   validate,
   createPrescription
 );
 
-router.get('/patient/:patientId', restrictTo('admin'), getPatientPrescriptions);
-router.get('/', restrictTo('admin'), getAllPrescriptions);
-router.put('/:id/status', restrictTo('admin'), updatePrescriptionStatus);
+router.get('/patient/:patientId', restrictTo('admin', 'doctor'), getPatientPrescriptions);
+router.get('/', restrictTo('admin', 'doctor'), getAllPrescriptions);
+router.put('/:id/status', restrictTo('admin', 'doctor'), updatePrescriptionStatus);
 
 router.get('/:id', getPrescriptionById); // owner-or-admin check happens in controller
 

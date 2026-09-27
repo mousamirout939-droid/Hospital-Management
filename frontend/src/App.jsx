@@ -9,6 +9,8 @@ import NotFoundPage from './pages/NotFoundPage';
 
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import DoctorLoginPage from './pages/auth/DoctorLoginPage';
+import DoctorRegisterPage from './pages/auth/DoctorRegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 
@@ -31,6 +33,12 @@ import AdminLabReportsPage from './pages/admin/AdminLabReportsPage';
 import AdminBillingPage from './pages/admin/AdminBillingPage';
 import AdminProfilePage from './pages/admin/AdminProfilePage';
 
+import DoctorDashboard from './pages/doctor/DoctorDashboard';
+import DoctorAppointmentsPage from './pages/doctor/DoctorAppointmentsPage';
+import DoctorMedicalRecordsPage from './pages/doctor/DoctorMedicalRecordsPage';
+import DoctorPrescriptionsPage from './pages/doctor/DoctorPrescriptionsPage';
+import DoctorProfilePage from './pages/doctor/DoctorProfilePage';
+
 function App() {
   return (
     <Routes>
@@ -41,6 +49,8 @@ function App() {
       <Route element={<PublicOnlyRoute />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/doctor/login" element={<DoctorLoginPage />} />
+        <Route path="/doctor/register" element={<DoctorRegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       </Route>
@@ -71,6 +81,17 @@ function App() {
           <Route path="lab-reports" element={<AdminLabReportsPage />} />
           <Route path="billing" element={<AdminBillingPage />} />
           <Route path="profile" element={<AdminProfilePage />} />
+        </Route>
+      </Route>
+
+      {/* Doctor area */}
+      <Route element={<ProtectedRoute allowedRoles={['doctor']} />}>
+        <Route path="/doctor" element={<DashboardLayout />}>
+          <Route path="dashboard" element={<DoctorDashboard />} />
+          <Route path="appointments" element={<DoctorAppointmentsPage />} />
+          <Route path="medical-records" element={<DoctorMedicalRecordsPage />} />
+          <Route path="prescriptions" element={<DoctorPrescriptionsPage />} />
+          <Route path="profile" element={<DoctorProfilePage />} />
         </Route>
       </Route>
 

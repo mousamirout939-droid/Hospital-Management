@@ -10,7 +10,7 @@ import { extractErrorMessage } from '../../services/api';
 
 const emptyMedicine = { medicineName: '', dosage: '', frequency: '', duration: '', instructions: '' };
 
-const CreatePrescriptionModal = ({ onClose, onSaved }) => {
+const CreatePrescriptionModal = ({ onClose, onSaved, doctorOnly = false }) => {
   const [patient, setPatient] = useState('');
   const [doctor, setDoctor] = useState('');
   const [medicines, setMedicines] = useState([{ ...emptyMedicine }]);
@@ -29,8 +29,8 @@ const CreatePrescriptionModal = ({ onClose, onSaved }) => {
     e.preventDefault();
     setError('');
 
-    if (!patient || !doctor) {
-      setError('Please select both a patient and a doctor');
+    if (!patient || (!doctorOnly && !doctor)) {
+      setError(doctorOnly ? 'Please select a patient' : 'Please select both a patient and a doctor');
       return;
     }
     const invalidMed = medicines.some((m) => !m.medicineName || !m.dosage || !m.frequency || !m.duration);
@@ -41,7 +41,7 @@ const CreatePrescriptionModal = ({ onClose, onSaved }) => {
 
     setSubmitting(true);
     try {
-      await prescriptionService.create({ patient, doctor, medicines, additionalNotes });
+      await prescriptionService.create({ patient, ...(doctorOnly ? {} : { doctor }), medicines, additionalNotes });
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -56,7 +56,7 @@ const CreatePrescriptionModal = ({ onClose, onSaved }) => {
 
       <form onSubmit={handleSubmit}>
         <PatientSelect value={patient} onChange={setPatient} required />
-        <DoctorSelect value={doctor} onChange={setDoctor} required />
+        {!doctorOnly && <DoctorSelect value={doctor} onChange={setDoctor} required />}
 
         <div className="field-group">
           <label className="field-label">Medicines</label>

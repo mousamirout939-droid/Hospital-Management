@@ -19,18 +19,17 @@ router.get('/my', restrictTo('patient'), getMyMedicalRecords);
 
 router.post(
   '/',
-  restrictTo('admin'),
+  restrictTo('admin', 'doctor'),
   [
     body('patient').notEmpty().withMessage('Patient is required'),
-    body('doctor').notEmpty().withMessage('Doctor is required'),
     body('diagnosis').trim().notEmpty().withMessage('Diagnosis is required'),
   ],
   validate,
   createMedicalRecord
 );
 
-router.get('/patient/:patientId', restrictTo('admin'), getPatientMedicalRecords);
-router.put('/:id', restrictTo('admin'), updateMedicalRecord);
+router.get('/patient/:patientId', restrictTo('admin', 'doctor'), getPatientMedicalRecords);
+router.put('/:id', restrictTo('admin', 'doctor'), updateMedicalRecord);
 router.delete('/:id', restrictTo('admin'), deleteMedicalRecord);
 
 router.get('/:id', getMedicalRecordById); // owner-or-admin check happens in controller

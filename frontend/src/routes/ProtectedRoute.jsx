@@ -13,7 +13,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const redirectPath = user.role === 'admin' ? '/admin/dashboard' : '/patient/dashboard';
+    const redirectPath = user.role === 'admin' ? '/admin/dashboard' : user.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard';
     return <Navigate to={redirectPath} replace />;
   }
 

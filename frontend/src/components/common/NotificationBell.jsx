@@ -24,7 +24,7 @@ const NotificationBell = () => {
     if (!notification.isRead) await markAsRead(notification._id);
     setOpen(false);
 
-    const base = user?.role === 'admin' ? '/admin' : '/patient';
+    const base = user?.role === 'admin' ? '/admin' : user?.role === 'doctor' ? '/doctor' : '/patient';
     const typeRouteMap = {
       'appointment-booked': `${base}/appointments`,
       'appointment-confirmed': `${base}/appointments`,

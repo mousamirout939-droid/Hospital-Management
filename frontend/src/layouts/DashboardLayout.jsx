@@ -29,6 +29,13 @@ const adminLinks = [
   { to: '/admin/billing', label: 'Billing', icon: IconReceipt },
 ];
 
+const doctorLinks = [
+  { to: '/doctor/dashboard', label: 'Dashboard', icon: IconDashboard },
+  { to: '/doctor/appointments', label: 'Appointments', icon: IconCalendar },
+  { to: '/doctor/medical-records', label: 'Medical Records', icon: IconFile },
+  { to: '/doctor/prescriptions', label: 'Prescriptions', icon: IconPill },
+];
+
 const patientLinks = [
   { to: '/patient/dashboard', label: 'Dashboard', icon: IconDashboard },
   { to: '/patient/find-doctors', label: 'Find Doctors', icon: IconDoctor },
@@ -49,6 +56,11 @@ const pageTitles = {
   '/admin/lab-reports': 'Lab Reports',
   '/admin/billing': 'Billing',
   '/admin/profile': 'My Profile',
+  '/doctor/dashboard': 'Dashboard',
+  '/doctor/appointments': 'Appointments',
+  '/doctor/medical-records': 'Medical Records',
+  '/doctor/prescriptions': 'Prescriptions',
+  '/doctor/profile': 'My Profile',
   '/patient/dashboard': 'Dashboard',
   '/patient/find-doctors': 'Find a Doctor',
   '/patient/appointments': 'My Appointments',
@@ -60,13 +72,13 @@ const pageTitles = {
 };
 
 const DashboardLayoutInner = () => {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isDoctor } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const links = isAdmin ? adminLinks : patientLinks;
-  const profilePath = isAdmin ? '/admin/profile' : '/patient/profile';
+  const links = isAdmin ? adminLinks : isDoctor ? doctorLinks : patientLinks;
+  const profilePath = isAdmin ? '/admin/profile' : isDoctor ? '/doctor/profile' : '/patient/profile';
 
   const matchedTitle = Object.keys(pageTitles)
     .filter((path) => location.pathname.startsWith(path))
@@ -91,7 +103,7 @@ const DashboardLayoutInner = () => {
           <div className="sidebar-brand-mark">M+</div>
           <div>
             <div className="sidebar-brand-text">MediCare</div>
-            <div className="sidebar-brand-sub">{isAdmin ? 'Admin Console' : 'Patient Portal'}</div>
+            <div className="sidebar-brand-sub">{isAdmin ? 'Admin Console' : isDoctor ? 'Doctor Portal' : 'Patient Portal'}</div>
           </div>
           <button
             className="modal-close"

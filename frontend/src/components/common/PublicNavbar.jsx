@@ -9,8 +9,11 @@ const PublicNavbar = () => (
         <span className="landing-brand-name">MediCare</span>
       </Link>
       <nav className="landing-nav-actions">
+        <Link to="/doctor/login">
+          <Button variant="ghost">Doctor Login</Button>
+        </Link>
         <Link to="/login">
-          <Button variant="ghost">Log In</Button>
+          <Button variant="ghost">Patient Login</Button>
         </Link>
         <Link to="/register">
           <Button variant="primary">Get Started</Button>
