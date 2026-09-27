@@ -62,6 +62,7 @@ export const statusToBadgeClass = (status) => {
     cancelled: 'badge-danger',
     unpaid: 'badge-danger',
     'no-show': 'badge-danger',
+    rejected: 'badge-danger',
     fulfilled: 'badge-info',
     refunded: 'badge-neutral',
   };

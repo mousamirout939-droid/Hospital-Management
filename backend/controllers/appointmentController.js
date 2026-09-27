@@ -3,7 +3,7 @@ const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const { getPagination, buildPaginationMeta } = require('../utils/helpers');
 const { parseLocalDate } = require('../utils/dateUtils');
-const { createNotification } = require('../utils/notify');
+const { createNotification, sendAppointmentConfirmationNotifications } = require('../utils/notify');
 const { sendEmail } = require('../config/email');
 
 /**
@@ -46,6 +46,12 @@ const bookAppointment = asyncHandler(async (req, res) => {
     throw new Error('This time slot has just been booked by someone else. Please choose another.');
   }
 
+  const nextTokenNumber = await Appointment.countDocuments({
+    doctor: doctorId,
+    appointmentDate: requestedDate,
+    status: { $nin: ['cancelled', 'rejected'] },
+  }) + 1;
+
   const appointment = await Appointment.create({
     patient: req.user.id,
     doctor: doctorId,
@@ -53,6 +59,7 @@ const bookAppointment = asyncHandler(async (req, res) => {
     timeSlot,
     reasonForVisit,
     consultationFee: doctor.consultationFee,
+    tokenNumber: nextTokenNumber,
   });
 
   await createNotification({
@@ -199,13 +206,13 @@ const getAppointmentById = asyncHandler(async (req, res) => {
 const updateAppointmentStatus = asyncHandler(async (req, res) => {
   const { status, notes } = req.body;
 
-  const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'no-show'];
+  const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'rejected', 'no-show'];
   if (!validStatuses.includes(status)) {
     res.status(400);
     throw new Error('Invalid status value');
   }
 
-  const appointment = await Appointment.findById(req.params.id).populate('doctor', 'name user');
+  const appointment = await Appointment.findById(req.params.id).populate('doctor', 'name user department specialization').populate('patient', 'name email phone');
   if (!appointment) {
     res.status(404);
     throw new Error('Appointment not found');
@@ -219,23 +226,40 @@ const updateAppointmentStatus = asyncHandler(async (req, res) => {
     }
   }
 
+  const previousStatus = appointment.status;
   appointment.status = status;
   if (notes !== undefined) appointment.notes = notes;
+
+  if (status === 'confirmed' && !appointment.confirmationNotified) {
+    appointment.confirmationNotified = true;
+  }
+
   await appointment.save();
 
   const statusMessages = {
     confirmed: `Your appointment with Dr. ${appointment.doctor.name} has been confirmed.`,
     completed: `Your appointment with Dr. ${appointment.doctor.name} has been marked as completed.`,
     cancelled: `Your appointment with Dr. ${appointment.doctor.name} has been cancelled by the hospital.`,
+    rejected: `Your appointment with Dr. ${appointment.doctor.name} has been rejected.`,
     'no-show': `You missed your appointment with Dr. ${appointment.doctor.name}.`,
   };
 
+  if (status === 'confirmed' && previousStatus !== 'confirmed') {
+    await sendAppointmentConfirmationNotifications({
+      appointment,
+      patient: appointment.patient,
+      doctor: appointment.doctor,
+      hospitalName: process.env.HOSPITAL_NAME || 'MediCare Hospital',
+    });
+  }
+
   if (statusMessages[status]) {
+    const notificationType = status === 'confirmed' ? 'appointment-confirmed' : status === 'cancelled' ? 'appointment-cancelled' : status === 'rejected' ? 'appointment-cancelled' : status === 'no-show' ? 'appointment-cancelled' : status;
     await createNotification({
       user: appointment.patient,
-      title: 'Appointment Update',
+      title: status === 'confirmed' ? 'Appointment Confirmed' : 'Appointment Update',
       message: statusMessages[status],
-      type: `appointment-${status === 'no-show' ? 'cancelled' : status}`,
+      type: notificationType,
       relatedId: appointment._id,
     });
   }

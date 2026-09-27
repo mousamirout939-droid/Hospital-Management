@@ -6,11 +6,13 @@ import StatCard from '../../components/common/StatCard';
 import LoadingScreen from '../../components/common/LoadingScreen';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import { formatDate } from '../../utils/formatters';
+import { formatDate, timeAgo } from '../../utils/formatters';
+import { useNotifications } from '../../context/NotificationContext';
 import { IconCalendar, IconPill, IconFlask, IconReceipt, IconDoctor, IconClock } from '../../components/common/Icons';
 
 const PatientDashboard = () => {
   const { user } = useAuth();
+  const { notifications, unreadCount } = useNotifications();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -110,6 +112,29 @@ const PatientDashboard = () => {
             </Link>
           </div>
         </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 24 }}>
+        <div className="section-title-row" style={{ marginBottom: 12 }}>
+          <h3 className="card-title">Notifications</h3>
+          {unreadCount > 0 && <span className="badge badge-warning">{unreadCount} unread</span>}
+        </div>
+
+        {notifications.length === 0 ? (
+          <div className="empty-state" style={{ padding: '20px 16px', textAlign: 'center', color: 'var(--color-ink-faint)' }}>
+            No notifications yet.
+          </div>
+        ) : (
+          <div className="flex-col gap-2">
+            {notifications.slice(0, 5).map((notification) => (
+              <div key={notification._id} className={`notif-item ${!notification.isRead ? 'unread' : ''}`} style={{ cursor: 'default' }}>
+                <div className="notif-item-title">{notification.title}</div>
+                <div className="notif-item-message">{notification.message}</div>
+                <div className="notif-item-time">{timeAgo(notification.createdAt)}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

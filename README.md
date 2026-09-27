@@ -48,10 +48,12 @@ Hospital_Management_System/
 - **Roles**: Admin and Patient. Admin manages the platform; patients self-serve.
 - **Doctors**: Admin CRUD with weekly availability scheduling; patients browse/search/filter by department.
 - **Appointments**: Real-time slot availability (auto-generated from doctor schedule, excludes already-booked slots), booking, cancellation, admin status workflow (pending → confirmed → completed/cancelled/no-show).
+- **Telemedicine**: Secure online doctor consultations with appointment scheduling, digital prescription workflow, and remote care coordination for modern hospital operations.
 - **Medical Records**: Diagnosis, symptoms, treatment plan, and vitals per visit, viewable by the patient and managed by admin.
 - **Pharmacy (Prescriptions)**: Multi-medicine prescriptions with dosage/frequency/duration/instructions; status tracking (active/fulfilled/cancelled).
 - **Lab Reports**: Parameterized test results with normal ranges and flags (normal/low/high), status workflow, automatic "ready" notification.
 - **Billing**: Itemized invoices with tax/discount, partial/full payment recording, per-patient billing history.
+- **Multilingual Patient Support**: Patient-facing healthcare information and navigation in English, Hindi, Kannada, and other Indian languages for broader accessibility.
 - **Notifications**: In-app notification center (bell icon) for appointments, prescriptions, lab results, invoices, and payments — polled every 30s.
 - **Security**: helmet, mongo-sanitize, xss-clean, rate limiting, CORS allowlist, bcrypt password hashing, centralized error handling.
 
