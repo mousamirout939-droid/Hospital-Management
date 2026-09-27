@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
+const User = require('../models/User');
 const { getPagination, buildPaginationMeta } = require('../utils/helpers');
 const { parseLocalDate } = require('../utils/dateUtils');
 const { createNotification, sendAppointmentConfirmationNotifications } = require('../utils/notify');
@@ -62,13 +63,29 @@ const bookAppointment = asyncHandler(async (req, res) => {
     tokenNumber: nextTokenNumber,
   });
 
-  await createNotification({
-    user: req.user.id,
-    title: 'Appointment Requested',
-    message: `Your appointment with Dr. ${doctor.name} on ${requestedDate.toLocaleDateString()} at ${timeSlot} has been requested and is pending confirmation.`,
-    type: 'appointment-booked',
-    relatedId: appointment._id,
-  });
+  await Promise.all([
+    createNotification({
+      user: req.user.id,
+      title: 'Appointment Requested',
+      message: `Your appointment with Dr. ${doctor.name} on ${requestedDate.toLocaleDateString()} at ${timeSlot} has been requested and is pending confirmation.`,
+      type: 'appointment-booked',
+      relatedId: appointment._id,
+    }),
+    doctor.user && createNotification({
+      user: doctor.user,
+      title: 'New Appointment Request',
+      message: `A new appointment request has been sent by ${req.user.name} for ${requestedDate.toLocaleDateString()} at ${timeSlot}. Please review and confirm it.`,
+      type: 'appointment-booked',
+      relatedId: appointment._id,
+    }),
+    User.find({ role: 'admin' }).then((admins) => Promise.all(admins.map((admin) => createNotification({
+      user: admin._id,
+      title: 'New Appointment Request',
+      message: `A new appointment request from ${req.user.name} with Dr. ${doctor.name} is waiting for approval on ${requestedDate.toLocaleDateString()} at ${timeSlot}.`,
+      type: 'appointment-booked',
+      relatedId: appointment._id,
+    })))),
+  ]);
 
   sendEmail({
     to: req.user.email,
@@ -189,8 +206,11 @@ const getAppointmentById = asyncHandler(async (req, res) => {
   }
 
   const isOwner = appointment.patient._id.toString() === req.user.id.toString();
-  const isDoctorOwner = req.user.role === 'doctor' && appointment.doctor && appointment.doctor._id.toString() === (await Doctor.findOne({ user: req.user.id }))?._id?.toString();
-  if (req.user.role !== 'admin' && !isOwner && !isDoctorOwner) {
+  const isDoctorOwner = req.user.role === 'doctor' && appointment.doctor;
+  const appointmentDoctorId = appointment.doctor?._id ? appointment.doctor._id.toString() : appointment.doctor?.toString();
+  const doctorProfile = req.user.role === 'doctor' ? await Doctor.findOne({ user: req.user.id }) : null;
+
+  if (req.user.role !== 'admin' && !isOwner && !(isDoctorOwner && doctorProfile && appointmentDoctorId === doctorProfile._id.toString())) {
     res.status(403);
     throw new Error('You do not have permission to view this appointment');
   }
@@ -220,7 +240,9 @@ const updateAppointmentStatus = asyncHandler(async (req, res) => {
 
   if (req.user.role === 'doctor') {
     const doctorProfile = await Doctor.findOne({ user: req.user.id });
-    if (!doctorProfile || appointment.doctor?._id?.toString() !== doctorProfile._id.toString()) {
+    const appointmentDoctorId = appointment.doctor?._id ? appointment.doctor._id.toString() : appointment.doctor?.toString();
+
+    if (!doctorProfile || !appointmentDoctorId || appointmentDoctorId !== doctorProfile._id.toString()) {
       res.status(403);
       throw new Error('You can only update appointments assigned to you.');
     }
