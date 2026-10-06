@@ -125,6 +125,8 @@
 }
 @media (max-width: 640px) {
   .field-row { grid-template-columns: 1fr; }
+  .btn-lg { padding: 12px 20px; font-size: 0.95rem; }
+  .btn { white-space: normal; }
 }
 
 /* ---------- Cards ---------- */

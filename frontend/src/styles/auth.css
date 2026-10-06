@@ -158,5 +158,38 @@
 .password-strength-bar.filled-strong { background: var(--color-success); }
 
 @media (max-width: 880px) {
-  .auth-visual { display: none; }
+  .auth-page {
+    min-height: auto;
+  }
+
+  .auth-visual {
+    display: none;
+  }
+
+  .auth-form-side {
+    padding: var(--space-5) var(--space-4) var(--space-7);
+  }
+
+  .auth-form-box {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-form-box h1 {
+    font-size: 1.5rem;
+  }
+
+  .auth-form-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: var(--space-5);
+  }
+
+  .auth-form-footer {
+    font-size: 0.8rem;
+  }
+
+  .auth-divider {
+    margin: var(--space-4) 0;
+  }
 }
