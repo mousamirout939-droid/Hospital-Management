@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoadingScreen from '../components/common/LoadingScreen';
+import { getDashboardPath } from '../utils/rolePaths';
 
 const ProtectedRoute = ({ allowedRoles }) => {
   const { user, loading, isAuthenticated, logout } = useAuth();
@@ -13,7 +14,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const redirectPath = user.role === 'admin' ? '/admin/dashboard' : user.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard';
+    const redirectPath = getDashboardPath(user.role);
     const currentRole = user.role || 'user';
     const allowedRoleLabel = allowedRoles.join(' or ');
 

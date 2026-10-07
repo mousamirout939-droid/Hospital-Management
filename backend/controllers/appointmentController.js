@@ -238,6 +238,17 @@ const updateAppointmentStatus = asyncHandler(async (req, res) => {
     throw new Error('Appointment not found');
   }
 
+  if (req.user.role === 'receptionist') {
+    const allowedTransitions = {
+      pending: ['confirmed', 'cancelled'],
+      confirmed: ['cancelled', 'no-show'],
+    };
+    if (!allowedTransitions[appointment.status]?.includes(status)) {
+      res.status(403);
+      throw new Error('Receptionists can only confirm or cancel pending appointments, or cancel/mark confirmed appointments as no-show.');
+    }
+  }
+
   if (req.user.role === 'doctor') {
     const doctorProfile = await Doctor.findOne({ user: req.user.id });
     const appointmentDoctorId = appointment.doctor?._id ? appointment.doctor._id.toString() : appointment.doctor?.toString();

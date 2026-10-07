@@ -180,6 +180,11 @@ const getPrescriptionById = asyncHandler(async (req, res) => {
 const updatePrescriptionStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
+  if (req.user.role === 'pharmacist' && status !== 'fulfilled') {
+    res.status(403);
+    throw new Error('Pharmacists can only mark prescriptions as fulfilled.');
+  }
+
   const prescription = await Prescription.findById(req.params.id);
 
   if (!prescription) {
@@ -193,6 +198,10 @@ const updatePrescriptionStatus = asyncHandler(async (req, res) => {
       res.status(403);
       throw new Error('You can only update prescriptions you issued.');
     }
+  }
+  if (req.user.role === 'pharmacist' && prescription.status !== 'active') {
+    res.status(409);
+    throw new Error('Only active prescriptions can be dispensed.');
   }
 
   const updated = await Prescription.findByIdAndUpdate(

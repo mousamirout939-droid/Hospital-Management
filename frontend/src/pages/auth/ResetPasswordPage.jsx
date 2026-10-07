@@ -6,6 +6,7 @@ import FormField from '../../components/common/FormField';
 import Button from '../../components/common/Button';
 import Alert from '../../components/common/Alert';
 import { IconStethoscope } from '../../components/common/Icons';
+import { getDashboardPath } from '../../utils/rolePaths';
 
 const ResetPasswordPage = () => {
   const { token } = useParams();
@@ -31,7 +32,7 @@ const ResetPasswordPage = () => {
       localStorage.setItem('hms_user', JSON.stringify(res.data.user));
       setSuccess(true);
       setTimeout(() => {
-        navigate(res.data.user.role === 'admin' ? '/admin/dashboard' : '/patient/dashboard');
+        navigate(getDashboardPath(res.data.user.role));
       }, 1500);
     } catch (err) {
       setError(extractErrorMessage(err));

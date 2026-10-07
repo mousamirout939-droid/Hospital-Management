@@ -5,6 +5,7 @@ import FormField from '../../components/common/FormField';
 import Button from '../../components/common/Button';
 import Alert from '../../components/common/Alert';
 import { IconStethoscope } from '../../components/common/Icons';
+import { getDashboardPath } from '../../utils/rolePaths';
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -29,9 +30,7 @@ const LoginPage = () => {
       if (redirectTo) {
         navigate(redirectTo);
       } else {
-        const redirectPath =
-          result.user.role === 'admin' ? '/admin/dashboard' : result.user.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard';
-        navigate(redirectPath);
+        navigate(getDashboardPath(result.user.role));
       }
     } else {
       setError(result.message);

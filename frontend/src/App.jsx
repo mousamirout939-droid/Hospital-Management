@@ -38,6 +38,7 @@ import DoctorAppointmentsPage from './pages/doctor/DoctorAppointmentsPage';
 import DoctorMedicalRecordsPage from './pages/doctor/DoctorMedicalRecordsPage';
 import DoctorPrescriptionsPage from './pages/doctor/DoctorPrescriptionsPage';
 import DoctorProfilePage from './pages/doctor/DoctorProfilePage';
+import StaffDashboard from './pages/staff/StaffDashboard';
 
 function App() {
   return (
@@ -92,6 +93,29 @@ function App() {
           <Route path="medical-records" element={<DoctorMedicalRecordsPage />} />
           <Route path="prescriptions" element={<DoctorPrescriptionsPage />} />
           <Route path="profile" element={<DoctorProfilePage />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['receptionist']} />}>
+        <Route path="/receptionist" element={<DashboardLayout />}>
+          <Route path="dashboard" element={<StaffDashboard role="receptionist" />} />
+          <Route path="appointments" element={<AdminAppointmentsPage />} />
+          <Route path="billing" element={<AdminBillingPage />} />
+          <Route path="profile" element={<PatientProfilePage />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['pharmacist']} />}>
+        <Route path="/pharmacist" element={<DashboardLayout />}>
+          <Route path="dashboard" element={<StaffDashboard role="pharmacist" />} />
+          <Route path="profile" element={<PatientProfilePage />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['lab-technician']} />}>
+        <Route path="/lab-technician" element={<DashboardLayout />}>
+          <Route path="dashboard" element={<StaffDashboard role="lab-technician" />} />
+          <Route path="profile" element={<PatientProfilePage />} />
         </Route>
       </Route>
 

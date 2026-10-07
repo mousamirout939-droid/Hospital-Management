@@ -135,6 +135,12 @@ const getInvoiceById = asyncHandler(async (req, res) => {
  */
 const recordPayment = asyncHandler(async (req, res) => {
   const { amount, paymentMethod } = req.body;
+  const paymentAmount = Number(amount);
+
+  if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+    res.status(400);
+    throw new Error('Payment amount must be greater than zero');
+  }
 
   const invoice = await Invoice.findById(req.params.id);
   if (!invoice) {
@@ -142,8 +148,20 @@ const recordPayment = asyncHandler(async (req, res) => {
     throw new Error('Invoice not found');
   }
 
-  invoice.paidAmount += Number(amount);
+  const remainingBalance = Math.max(invoice.totalAmount - invoice.paidAmount, 0);
+  if (paymentAmount > remainingBalance) {
+    res.status(400);
+    throw new Error('Payment amount cannot exceed the remaining invoice balance');
+  }
+
+  invoice.paidAmount += paymentAmount;
   invoice.paymentMethod = paymentMethod || invoice.paymentMethod;
+  invoice.paymentHistory.push({
+    amount: paymentAmount,
+    paymentMethod: invoice.paymentMethod,
+    recordedAt: new Date(),
+    recordedBy: req.user.id,
+  });
 
   if (invoice.paidAmount >= invoice.totalAmount) {
     invoice.paymentStatus = 'paid';
@@ -157,7 +175,7 @@ const recordPayment = asyncHandler(async (req, res) => {
   await createNotification({
     user: invoice.patient,
     title: 'Payment Received',
-    message: `A payment of ₹${Number(amount).toFixed(2)} has been recorded against your invoice ${invoice.invoiceNumber}.`,
+    message: `A payment of ₹${paymentAmount.toFixed(2)} has been recorded against your invoice ${invoice.invoiceNumber}.`,
     type: 'payment-received',
     relatedId: invoice._id,
   });

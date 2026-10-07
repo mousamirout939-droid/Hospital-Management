@@ -9,6 +9,7 @@ import LoadingScreen from '../../components/common/LoadingScreen';
 import Alert from '../../components/common/Alert';
 import Pagination from '../../components/common/Pagination';
 import { formatDate } from '../../utils/formatters';
+import { useAuth } from '../../context/AuthContext';
 
 const STATUS_TABS = [
   { key: '', label: 'All' },
@@ -25,6 +26,7 @@ const STATUS_TRANSITIONS = {
 };
 
 const AdminAppointmentsPage = () => {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [activeTab, setActiveTab] = useState('');
   const [dateFilter, setDateFilter] = useState('');
@@ -134,7 +136,9 @@ const AdminAppointmentsPage = () => {
               </thead>
               <tbody>
                 {appointments.map((appt) => {
-                  const transitions = STATUS_TRANSITIONS[appt.status] || [];
+                  const transitions = (STATUS_TRANSITIONS[appt.status] || []).filter(
+                    (status) => user?.role !== 'receptionist' || status !== 'completed'
+                  );
                   return (
                     <tr key={appt._id}>
                       <td>

@@ -2,6 +2,85 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const { getPagination, buildPaginationMeta } = require('../utils/helpers');
 
+const createStaffAccount = asyncHandler(async (req, res) => {
+  const { name, email, password, role } = req.body;
+  const staffRoles = ['receptionist', 'pharmacist', 'lab-technician'];
+
+  if (!name?.trim() || !email?.trim() || !password || !staffRoles.includes(role)) {
+    res.status(400);
+    throw new Error('Name, email, password, and a valid staff role are required');
+  }
+  if (password.length < 8) {
+    res.status(400);
+    throw new Error('Staff passwords must contain at least 8 characters');
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (await User.exists({ email: normalizedEmail })) {
+    res.status(409);
+    throw new Error('An account with this email already exists');
+  }
+
+  const staffUser = await User.create({
+    name: name.trim(),
+    email: normalizedEmail,
+    password,
+    role,
+  });
+
+  res.status(201).json({ success: true, data: staffUser.toSafeObject() });
+});
+
+const searchPatients = asyncHandler(async (req, res) => {
+  const search = req.query.search?.trim();
+  if (!search || search.length < 2) {
+    return res.status(200).json({ success: true, data: [] });
+  }
+
+  const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const patients = await User.find({
+    role: 'patient',
+    $or: [
+      { name: { $regex: escapedSearch, $options: 'i' } },
+      { email: { $regex: escapedSearch, $options: 'i' } },
+      { phone: { $regex: escapedSearch, $options: 'i' } },
+    ],
+  })
+    .select('name email phone')
+    .sort({ name: 1 })
+    .limit(8);
+
+  res.status(200).json({ success: true, data: patients });
+});
+
+const createPatientAccount = asyncHandler(async (req, res) => {
+  const { name, email, password, phone } = req.body;
+  if (!name?.trim() || !email?.trim() || !password) {
+    res.status(400);
+    throw new Error('Name, email, and a temporary password are required');
+  }
+  if (password.length < 8) {
+    res.status(400);
+    throw new Error('Temporary password must contain at least 8 characters');
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (await User.exists({ email: normalizedEmail })) {
+    res.status(409);
+    throw new Error('An account with this email already exists');
+  }
+
+  const patient = await User.create({
+    name: name.trim(),
+    email: normalizedEmail,
+    password,
+    phone: phone || '',
+    role: 'patient',
+  });
+
+  res.status(201).json({ success: true, data: patient.toSafeObject() });
+});
+
 /**
  * @desc    Update current user's own profile
  * @route   PUT /api/users/profile
@@ -34,10 +113,11 @@ const getAllPatients = asyncHandler(async (req, res) => {
 
   const filter = { role: 'patient' };
   if (search) {
+    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } },
-      { phone: { $regex: search, $options: 'i' } },
+      { name: { $regex: escapedSearch, $options: 'i' } },
+      { email: { $regex: escapedSearch, $options: 'i' } },
+      { phone: { $regex: escapedSearch, $options: 'i' } },
     ];
   }
 
@@ -107,6 +187,9 @@ const getAdminStats = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  createStaffAccount,
+  createPatientAccount,
+  searchPatients,
   updateMyProfile,
   getAllPatients,
   getPatientById,

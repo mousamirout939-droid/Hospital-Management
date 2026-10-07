@@ -18,7 +18,7 @@ router.get('/my', restrictTo('patient'), getMyInvoices);
 
 router.post(
   '/',
-  restrictTo('admin'),
+  restrictTo('admin', 'receptionist'),
   [
     body('patient').notEmpty().withMessage('Patient is required'),
     body('items').isArray({ min: 1 }).withMessage('At least one billing item is required'),
@@ -27,8 +27,8 @@ router.post(
   createInvoice
 );
 
-router.get('/', restrictTo('admin'), getAllInvoices);
-router.put('/:id/pay', restrictTo('admin'), recordPayment);
+router.get('/', restrictTo('admin', 'receptionist'), getAllInvoices);
+router.put('/:id/pay', restrictTo('admin', 'receptionist'), recordPayment);
 
 router.get('/:id', getInvoiceById); // owner-or-admin check happens in controller
 

@@ -2,6 +2,57 @@ const asyncHandler = require('express-async-handler');
 const LabReport = require('../models/LabReport');
 const { getPagination, buildPaginationMeta } = require('../utils/helpers');
 const { createNotification } = require('../utils/notify');
+const pdfParse = require('pdf-parse');
+const { analyzeLabReportText } = require('../utils/labReportAnalyzer');
+
+const analyzeUploadedLabReport = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    res.status(400);
+    throw new Error('Choose a PDF lab report to analyze');
+  }
+
+  if (req.file.buffer.toString('ascii', 0, 5) !== '%PDF-') {
+    res.status(400);
+    throw new Error('The uploaded file is not a valid PDF');
+  }
+
+  let pdfDocument;
+  try {
+    pdfDocument = await pdfParse(req.file.buffer);
+  } catch (error) {
+    res.status(422);
+    throw new Error('This PDF could not be read. Upload a valid, text-based lab report.');
+  }
+
+  if (!pdfDocument.text.trim()) {
+    res.status(422);
+    throw new Error('No selectable text was found. Scanned image-only PDFs are not supported yet.');
+  }
+
+  const parameters = analyzeLabReportText(pdfDocument.text);
+  if (parameters.length === 0) {
+    res.status(422);
+    throw new Error('No supported CBC results were found. Upload a report containing readable CBC values.');
+  }
+
+  const sourceFileName = String(req.file.originalname)
+    .replace(/^.*[\\/]/, '')
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .slice(0, 120);
+  const isCbcReport = /\bcbc\b|complete blood count/i.test(pdfDocument.text);
+  const report = await LabReport.create({
+    patient: req.user._id,
+    createdBy: req.user._id,
+    testName: isCbcReport ? 'Complete Blood Count (CBC)' : 'CBC Lab Report',
+    testType: 'Hematology',
+    status: 'completed',
+    parameters,
+    sourceFileName,
+    summary: 'Automated summary compares extracted results only with reference ranges printed in this report. This is informational, not a diagnosis. Please consult a qualified healthcare professional for interpretation.',
+  });
+
+  res.status(201).json({ success: true, data: report });
+});
 
 /**
  * @desc    Create a new lab report
@@ -147,8 +198,20 @@ const updateLabReport = asyncHandler(async (req, res) => {
   }
 
   const wasCompleted = previousReport.status === 'completed';
+  const updates = req.user.role === 'lab-technician'
+    ? {
+        ...(req.body.parameters !== undefined && { parameters: req.body.parameters }),
+        ...(req.body.summary !== undefined && { summary: req.body.summary }),
+        ...(req.body.status !== undefined && { status: req.body.status }),
+      }
+    : req.body;
 
-  const report = await LabReport.findByIdAndUpdate(req.params.id, req.body, {
+  if (req.user.role === 'lab-technician' && Object.keys(updates).length === 0) {
+    res.status(400);
+    throw new Error('Provide lab results, a summary, or a status to update.');
+  }
+
+  const report = await LabReport.findByIdAndUpdate(req.params.id, updates, {
     new: true,
     runValidators: true,
   });
@@ -183,6 +246,7 @@ const deleteLabReport = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  analyzeUploadedLabReport,
   createLabReport,
   getMyLabReports,
   getPatientLabReports,

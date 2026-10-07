@@ -46,6 +46,16 @@ const patientLinks = [
   { to: '/patient/billing', label: 'Billing', icon: IconReceipt },
 ];
 
+const staffLinks = {
+  receptionist: [
+    { to: '/receptionist/dashboard', label: 'Reception', icon: IconDashboard },
+    { to: '/receptionist/appointments', label: 'Appointments', icon: IconCalendar },
+    { to: '/receptionist/billing', label: 'Billing', icon: IconReceipt },
+  ],
+  pharmacist: [{ to: '/pharmacist/dashboard', label: 'Pharmacy', icon: IconPill }],
+  'lab-technician': [{ to: '/lab-technician/dashboard', label: 'Laboratory', icon: IconFlask }],
+};
+
 const pageTitles = {
   '/admin/dashboard': 'Dashboard',
   '/admin/appointments': 'Appointments',
@@ -69,6 +79,14 @@ const pageTitles = {
   '/patient/lab-reports': 'Lab Reports',
   '/patient/billing': 'Billing',
   '/patient/profile': 'My Profile',
+  '/receptionist/dashboard': 'Reception',
+  '/receptionist/appointments': 'Appointments',
+  '/receptionist/billing': 'Billing',
+  '/receptionist/profile': 'My Profile',
+  '/pharmacist/dashboard': 'Pharmacy',
+  '/pharmacist/profile': 'My Profile',
+  '/lab-technician/dashboard': 'Laboratory',
+  '/lab-technician/profile': 'My Profile',
 };
 
 const DashboardLayoutInner = () => {
@@ -77,8 +95,22 @@ const DashboardLayoutInner = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const links = isAdmin ? adminLinks : isDoctor ? doctorLinks : patientLinks;
-  const profilePath = isAdmin ? '/admin/profile' : isDoctor ? '/doctor/profile' : '/patient/profile';
+  const links = isAdmin ? adminLinks : isDoctor ? doctorLinks : staffLinks[user?.role] || patientLinks;
+  const profilePath = isAdmin
+    ? '/admin/profile'
+    : isDoctor
+      ? '/doctor/profile'
+      : staffLinks[user?.role]
+        ? `/${user.role}/profile`
+        : '/patient/profile';
+  const portalName = {
+    admin: 'Admin Console',
+    doctor: 'Doctor Portal',
+    patient: 'Patient Portal',
+    receptionist: 'Reception Portal',
+    pharmacist: 'Pharmacy Portal',
+    'lab-technician': 'Laboratory Portal',
+  }[user?.role] || 'Patient Portal';
 
   const matchedTitle = Object.keys(pageTitles)
     .filter((path) => location.pathname.startsWith(path))
@@ -103,7 +135,7 @@ const DashboardLayoutInner = () => {
           <div className="sidebar-brand-mark">M+</div>
           <div>
             <div className="sidebar-brand-text">MediCare</div>
-            <div className="sidebar-brand-sub">{isAdmin ? 'Admin Console' : isDoctor ? 'Doctor Portal' : 'Patient Portal'}</div>
+            <div className="sidebar-brand-sub">{portalName}</div>
           </div>
           <button
             className="modal-close"

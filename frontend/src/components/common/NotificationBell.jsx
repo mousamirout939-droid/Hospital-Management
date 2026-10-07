@@ -24,18 +24,42 @@ const NotificationBell = () => {
     if (!notification.isRead) await markAsRead(notification._id);
     setOpen(false);
 
-    const base = user?.role === 'admin' ? '/admin' : user?.role === 'doctor' ? '/doctor' : '/patient';
-    const typeRouteMap = {
-      'appointment-booked': `${base}/appointments`,
-      'appointment-confirmed': `${base}/appointments`,
-      'appointment-cancelled': `${base}/appointments`,
-      'appointment-reminder': `${base}/appointments`,
-      'prescription-issued': `${base}/prescriptions`,
-      'lab-report-ready': `${base}/lab-reports`,
-      'invoice-generated': `${base}/billing`,
-      'payment-received': `${base}/billing`,
+    const roleRoutes = {
+      admin: {
+        appointments: '/admin/appointments',
+        prescriptions: '/admin/prescriptions',
+        labs: '/admin/lab-reports',
+        billing: '/admin/billing',
+      },
+      doctor: {
+        appointments: '/doctor/appointments',
+        prescriptions: '/doctor/prescriptions',
+      },
+      patient: {
+        appointments: '/patient/appointments',
+        prescriptions: '/patient/prescriptions',
+        labs: '/patient/lab-reports',
+        billing: '/patient/billing',
+      },
+      receptionist: {
+        appointments: '/receptionist/appointments',
+        billing: '/receptionist/billing',
+      },
+      pharmacist: { prescriptions: '/pharmacist/dashboard' },
+      'lab-technician': { labs: '/lab-technician/dashboard' },
     };
-    const path = typeRouteMap[notification.type];
+    const routeTypeMap = {
+      'appointment-booked': 'appointments',
+      'appointment-confirmed': 'appointments',
+      'appointment-cancelled': 'appointments',
+      'appointment-reminder': 'appointments',
+      'prescription-issued': 'prescriptions',
+      'lab-report-ready': 'labs',
+      'invoice-generated': 'billing',
+      'payment-received': 'billing',
+    };
+    const section = routeTypeMap[notification.type];
+    const path = roleRoutes[user?.role]?.[section];
     if (path) navigate(path);
   };
 

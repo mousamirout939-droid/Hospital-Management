@@ -57,6 +57,11 @@ const labReportSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    sourceFileName: {
+      type: String,
+      maxlength: 120,
+      default: '',
+    },
     status: {
       type: String,
       enum: ['pending', 'in-progress', 'completed'],

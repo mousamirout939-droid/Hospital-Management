@@ -10,6 +10,20 @@ const invoiceItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const paymentHistorySchema = new mongoose.Schema(
+  {
+    amount: { type: Number, required: true, min: 0.01 },
+    paymentMethod: {
+      type: String,
+      enum: ['cash', 'card', 'insurance', 'upi', 'bank-transfer'],
+      required: true,
+    },
+    recordedAt: { type: Date, default: Date.now },
+    recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  },
+  { _id: false }
+);
+
 const invoiceSchema = new mongoose.Schema(
   {
     invoiceNumber: {
@@ -76,6 +90,10 @@ const invoiceSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0,
+    },
+    paymentHistory: {
+      type: [paymentHistorySchema],
+      default: [],
     },
     dueDate: {
       type: Date,

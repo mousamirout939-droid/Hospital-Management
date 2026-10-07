@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoadingScreen from '../components/common/LoadingScreen';
+import { getDashboardPath } from '../utils/rolePaths';
 
 const PublicOnlyRoute = () => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -8,8 +9,7 @@ const PublicOnlyRoute = () => {
   if (loading) return <LoadingScreen message="Loading…" />;
 
   if (isAuthenticated) {
-    const redirectPath = user.role === 'admin' ? '/admin/dashboard' : user.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard';
-    return <Navigate to={redirectPath} replace />;
+    return <Navigate to={getDashboardPath(user.role)} replace />;
   }
 
   return <Outlet />;

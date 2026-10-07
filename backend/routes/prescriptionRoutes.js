@@ -29,8 +29,8 @@ router.post(
 );
 
 router.get('/patient/:patientId', restrictTo('admin', 'doctor'), getPatientPrescriptions);
-router.get('/', restrictTo('admin', 'doctor'), getAllPrescriptions);
-router.put('/:id/status', restrictTo('admin', 'doctor'), updatePrescriptionStatus);
+router.get('/', restrictTo('admin', 'doctor', 'pharmacist'), getAllPrescriptions);
+router.put('/:id/status', restrictTo('admin', 'doctor', 'pharmacist'), updatePrescriptionStatus);
 
 router.get('/:id', getPrescriptionById); // owner-or-admin check happens in controller
 
