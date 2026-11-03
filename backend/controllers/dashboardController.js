@@ -4,6 +4,7 @@ const Doctor = require('../models/Doctor');
 const Appointment = require('../models/Appointment');
 const Invoice = require('../models/Invoice');
 const LabReport = require('../models/LabReport');
+const MedicineInventory = require('../models/MedicineInventory');
 const Prescription = require('../models/Prescription');
 
 const getDayBounds = (date = new Date()) => {
@@ -270,7 +271,11 @@ const getReceptionDashboard = asyncHandler(async (req, res) => {
 
 const getPharmacistDashboard = asyncHandler(async (req, res) => {
   const { start, end } = getDayBounds();
-  const [activePrescriptions, dispensedToday, queue] = await Promise.all([
+  const expiryStart = new Date();
+  expiryStart.setHours(0, 0, 0, 0);
+  const expiringSoonEnd = new Date(expiryStart);
+  expiringSoonEnd.setDate(expiringSoonEnd.getDate() + 30);
+  const [activePrescriptions, dispensedToday, queue, inventoryItems, lowStockItems, expiringSoonItems] = await Promise.all([
     Prescription.countDocuments({ status: 'active' }),
     Prescription.countDocuments({ status: 'fulfilled', updatedAt: { $gte: start, $lt: end } }),
     Prescription.find({ status: 'active' })
@@ -278,6 +283,11 @@ const getPharmacistDashboard = asyncHandler(async (req, res) => {
       .populate('doctor', 'name')
       .sort({ issuedDate: 1 })
       .limit(10),
+    MedicineInventory.countDocuments(),
+    MedicineInventory.countDocuments({ $expr: { $lte: ['$quantity', '$reorderLevel'] } }),
+    MedicineInventory.countDocuments({
+      expiryDate: { $gte: expiryStart, $lte: expiringSoonEnd },
+    }),
   ]);
 
   res.status(200).json({
@@ -286,27 +296,23 @@ const getPharmacistDashboard = asyncHandler(async (req, res) => {
       activePrescriptions,
       dispensedToday,
       queue,
-      inventoryConfigured: false,
-      inventoryMessage: 'Medicine stock and expiry tracking are not yet configured.',
+      inventoryItems,
+      lowStockItems,
+      expiringSoonItems,
     },
   });
 });
 
 const getLabTechnicianDashboard = asyncHandler(async (req, res) => {
-  const [pendingTests, inProgressTests, completedTests, queue] = await Promise.all([
+  const [pendingTests, inProgressTests, completedTests] = await Promise.all([
     LabReport.countDocuments({ status: 'pending' }),
     LabReport.countDocuments({ status: 'in-progress' }),
     LabReport.countDocuments({ status: 'completed' }),
-    LabReport.find({ status: { $in: ['pending', 'in-progress'] } })
-      .populate('patient', 'name')
-      .populate('doctor', 'name')
-      .sort({ reportDate: 1 })
-      .limit(10),
   ]);
 
   res.status(200).json({
     success: true,
-    data: { pendingTests, inProgressTests, completedTests, queue },
+    data: { pendingTests, inProgressTests, completedTests },
   });
 });
 

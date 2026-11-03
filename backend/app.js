@@ -21,6 +21,7 @@ const labReportRoutes = require('./routes/labReportRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const medicineInventoryRoutes = require('./routes/medicineInventoryRoutes');
 
 const app = express();
 
@@ -110,6 +111,7 @@ app.use('/api/lab-reports', labReportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/medicine-inventory', medicineInventoryRoutes);
 
 app.get('/', (req, res) => {
   res.status(200).json({

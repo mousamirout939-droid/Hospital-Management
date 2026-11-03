@@ -45,18 +45,18 @@ Hospital_Management_System/
 ## Features
 
 - **Authentication**: JWT-based auth (httpOnly cookie + Bearer token fallback), register/login/logout, forgot/reset password, change password.
-- **Roles**: Admin, Doctor, Patient, Receptionist, Pharmacist, and Lab Technician. Admin creates the three staff accounts; staff roles cannot be self-selected during public registration. Each role receives a dedicated, protected dashboard and only the relevant operational permissions.
+- **Roles**: Admin, Doctor, Patient, Receptionist, Pharmacist, and Lab Technician. Admin creates the three staff accounts; staff roles cannot be self-selected during public registration. Receptionists sign in at `/receptionist/login` to review patient, doctor, date, and time details and manage appointment confirmations from their protected dashboard. Each role receives a dedicated, protected dashboard and only the relevant operational permissions.
 - **Doctors**: Admin CRUD with weekly availability scheduling; patients browse/search/filter by department.
 - **Appointments**: Real-time slot availability (auto-generated from doctor schedule, excludes already-booked slots), booking, cancellation, admin status workflow (pending → confirmed → completed/cancelled/no-show).
 - **Telemedicine**: Secure online doctor consultations with appointment scheduling, digital prescription workflow, and remote care coordination for modern hospital operations.
 - **Medical Records**: Diagnosis, symptoms, treatment plan, and vitals per visit, viewable by the patient and managed by admin.
-- **Pharmacy (Prescriptions)**: Multi-medicine prescriptions with dosage/frequency/duration/instructions; status tracking (active/fulfilled/cancelled).
-- **Lab Reports**: Parameterized test results with normal ranges and flags (normal/low/high), status workflow, automatic "ready" notification. Patients can upload text-based CBC PDFs for local value extraction and comparison with ranges printed in the report; uploaded PDFs are processed in memory and are not stored. Scanned image-only PDFs are not supported.
+- **Pharmacy (Prescriptions & Inventory)**: Multi-medicine prescriptions with dosage/frequency/duration/instructions; pharmacists can add and update medicine stock, batches, reorder thresholds, suppliers, and expiry tracking.
+- **Lab Reports**: Lab technicians can review pending, in-progress, and completed reports, enter parameterized results with normal ranges and flags (normal/low/high), then publish completed reports to the patient portal with an automatic ready notification. Patients can upload text-based CBC PDFs for local value extraction and comparison with ranges printed in the report; uploaded PDFs are processed in memory and are not stored. Scanned image-only PDFs are not supported.
 - **Billing**: Itemized invoices with tax/discount, partial/full payment recording, per-patient billing history.
 - **Multilingual Patient Support**: Patient-facing healthcare information and navigation in English, Hindi, Kannada, and other Indian languages for broader accessibility.
 - **Notifications**: In-app notification center (bell icon) for appointments, prescriptions, lab results, invoices, and payments — polled every 30s.
 - **Security**: helmet, mongo-sanitize, xss-clean, rate limiting, CORS allowlist, bcrypt password hashing, centralized error handling.
-- **Role Dashboards**: Admin reporting charts; doctor daily appointments; receptionist patient registration, search, queue, and billing; pharmacist prescription dispensing; laboratory pending-report workflow. Bed occupancy and medicine inventory/expiry alerts are shown as unavailable until those data modules are configured.
+- **Role Dashboards**: Admin reporting charts; doctor daily appointments; receptionist patient registration, search, queue, and billing; pharmacist prescription dispensing and inventory alerts; laboratory report workflow from pending review through patient sharing.
 
 ## Local Development Setup
 
@@ -153,6 +153,7 @@ All routes are prefixed with `/api`. Key resource groups:
 | Invoices | `/invoices` | billing + payment recording |
 | Lab Reports | `/lab-reports` | parameterized results |
 | Notifications | `/notifications` | in-app notification center |
+| Medicine inventory | `/medicine-inventory` | pharmacist/admin stock listing and updates |
 | Dashboard | `/dashboard` | aggregated stats for admin/patient |
 | Role dashboards | `/dashboard/admin`, `/dashboard/doctor`, `/dashboard/receptionist`, `/dashboard/pharmacist`, `/dashboard/lab-technician`, `/dashboard/patient` | authenticated, role-scoped summaries |
 | Staff accounts | `POST /users/staff` | admin-only account provisioning for receptionist, pharmacist, and lab technician roles |

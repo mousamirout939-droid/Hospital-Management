@@ -10,6 +10,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import DoctorLoginPage from './pages/auth/DoctorLoginPage';
+import ReceptionistLoginPage from './pages/auth/ReceptionistLoginPage';
 import DoctorRegisterPage from './pages/auth/DoctorRegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
@@ -39,6 +40,7 @@ import DoctorMedicalRecordsPage from './pages/doctor/DoctorMedicalRecordsPage';
 import DoctorPrescriptionsPage from './pages/doctor/DoctorPrescriptionsPage';
 import DoctorProfilePage from './pages/doctor/DoctorProfilePage';
 import StaffDashboard from './pages/staff/StaffDashboard';
+import LabTechnicianDashboard from './pages/staff/LabTechnicianDashboard';
 
 function App() {
   return (
@@ -51,6 +53,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/doctor/login" element={<DoctorLoginPage />} />
+        <Route path="/receptionist/login" element={<ReceptionistLoginPage />} />
         <Route path="/doctor/register" element={<DoctorRegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
@@ -114,7 +117,7 @@ function App() {
 
       <Route element={<ProtectedRoute allowedRoles={['lab-technician']} />}>
         <Route path="/lab-technician" element={<DashboardLayout />}>
-          <Route path="dashboard" element={<StaffDashboard role="lab-technician" />} />
+          <Route path="dashboard" element={<LabTechnicianDashboard />} />
           <Route path="profile" element={<PatientProfilePage />} />
         </Route>
       </Route>

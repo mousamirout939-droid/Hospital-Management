@@ -198,6 +198,11 @@ const updateLabReport = asyncHandler(async (req, res) => {
   }
 
   const wasCompleted = previousReport.status === 'completed';
+  if (req.user.role === 'lab-technician' && wasCompleted) {
+    res.status(403);
+    throw new Error('Completed lab reports cannot be changed by a lab technician.');
+  }
+
   const updates = req.user.role === 'lab-technician'
     ? {
         ...(req.body.parameters !== undefined && { parameters: req.body.parameters }),
@@ -209,6 +214,39 @@ const updateLabReport = asyncHandler(async (req, res) => {
   if (req.user.role === 'lab-technician' && Object.keys(updates).length === 0) {
     res.status(400);
     throw new Error('Provide lab results, a summary, or a status to update.');
+  }
+
+  if (
+    req.user.role === 'lab-technician' &&
+    previousReport.status === 'pending' &&
+    (updates.parameters !== undefined || updates.summary !== undefined)
+  ) {
+    res.status(409);
+    throw new Error('Start a pending report before entering results.');
+  }
+
+  if (req.user.role === 'lab-technician' && updates.status) {
+    const allowedTransitions = {
+      pending: ['in-progress'],
+      'in-progress': ['completed'],
+    };
+    if (!allowedTransitions[previousReport.status]?.includes(updates.status)) {
+      res.status(400);
+      throw new Error('Start a pending report before entering results; only in-progress reports can be completed.');
+    }
+
+    if (updates.status === 'completed') {
+      const parameters = updates.parameters || previousReport.parameters;
+      if (!parameters.length || !parameters.some((parameter) => (
+        typeof parameter.parameterName === 'string' &&
+        parameter.parameterName.trim() &&
+        typeof parameter.result === 'string' &&
+        parameter.result.trim()
+      ))) {
+        res.status(400);
+        throw new Error('Add at least one test result before sharing the completed report with the patient.');
+      }
+    }
   }
 
   const report = await LabReport.findByIdAndUpdate(req.params.id, updates, {

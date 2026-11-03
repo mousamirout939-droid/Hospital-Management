@@ -3,8 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import { dashboardService } from '../../services/dashboardService';
 import { appointmentService } from '../../services/appointmentService';
 import { prescriptionService } from '../../services/prescriptionService';
-import { labReportService } from '../../services/labReportService';
 import { userService } from '../../services/userService';
+import MedicineInventoryPanel from './MedicineInventoryPanel';
 import { extractErrorMessage } from '../../services/api';
 import Alert from '../../components/common/Alert';
 import Badge from '../../components/common/Badge';
@@ -15,13 +15,12 @@ import LoadingScreen from '../../components/common/LoadingScreen';
 import Modal from '../../components/common/Modal';
 import StatCard from '../../components/common/StatCard';
 import { formatDate } from '../../utils/formatters';
-import { IconCalendar, IconFlask, IconPill, IconReceipt, IconSearch, IconUsers } from '../../components/common/Icons';
+import { IconCalendar, IconPill, IconReceipt, IconSearch, IconUsers } from '../../components/common/Icons';
 
 const roleDetails = {
   doctor: { title: 'Doctor dashboard', endpoint: 'doctor' },
   receptionist: { title: 'Reception dashboard', endpoint: 'receptionist' },
   pharmacist: { title: 'Pharmacy dashboard', endpoint: 'pharmacist' },
-  'lab-technician': { title: 'Laboratory dashboard', endpoint: 'lab-technician' },
 };
 
 const greeting = () => {
@@ -198,7 +197,7 @@ const StaffDashboard = ({ role }) => {
               <QueueRow
                 key={appointment._id}
                 title={`#${appointment.tokenNumber || '—'} · ${appointment.patient?.name || 'Patient'}`}
-                detail={`${appointment.timeSlot} · Dr. ${appointment.doctor?.name || 'Unassigned'}`}
+                detail={`${formatDate(appointment.appointmentDate)} · ${appointment.timeSlot} · Dr. ${appointment.doctor?.name || 'Unassigned'}`}
                 badge={<Badge status={appointment.status} />}
                 action={appointment.status === 'pending' ? (
                   <Button
@@ -221,12 +220,11 @@ const StaffDashboard = ({ role }) => {
           <div className="stat-grid">
             <StatCard icon={IconPill} label="Prescriptions to Dispense" value={data?.activePrescriptions ?? 0} tone="primary" />
             <StatCard icon={IconReceipt} label="Dispensed Today" value={data?.dispensedToday ?? 0} tone="info" />
-            <StatCard icon={IconFlask} label="Inventory" value={data?.inventoryConfigured ? 'Ready' : 'Not configured'} tone="warning" />
+            <StatCard icon={IconPill} label="Inventory Items" value={data?.inventoryItems ?? 0} tone="accent" />
+            <StatCard icon={IconUsers} label="Low Stock Items" value={data?.lowStockItems ?? 0} tone="warning" />
+            <StatCard icon={IconPill} label="Expiring Soon" value={data?.expiringSoonItems ?? 0} tone="warning" />
           </div>
-          <div className="card staff-info-card">
-            <h3 className="card-title">Inventory tracking</h3>
-            <p className="text-faint">{data?.inventoryMessage}</p>
-          </div>
+          <MedicineInventoryPanel />
           <QueueCard title="Prescription dispensing queue">
             {data?.queue?.length ? data.queue.map((prescription) => (
               <QueueRow
@@ -245,45 +243,6 @@ const StaffDashboard = ({ role }) => {
                 )}
               />
             )) : <EmptyState title="No prescriptions awaiting dispensing" />}
-          </QueueCard>
-        </>
-      )}
-
-      {role === 'lab-technician' && (
-        <>
-          <div className="stat-grid">
-            <StatCard icon={IconFlask} label="Pending Tests" value={data?.pendingTests ?? 0} tone="warning" />
-            <StatCard icon={IconReceipt} label="In Progress" value={data?.inProgressTests ?? 0} tone="accent" />
-            <StatCard icon={IconUsers} label="Completed Reports" value={data?.completedTests ?? 0} tone="primary" />
-          </div>
-          <QueueCard title="Test orders and samples">
-            {data?.queue?.length ? data.queue.map((report) => (
-              <QueueRow
-                key={report._id}
-                title={report.testName}
-                detail={`${report.patient?.name || 'Patient'} · ${formatDate(report.reportDate)}${report.doctor?.name ? ` · Dr. ${report.doctor.name}` : ''}`}
-                badge={<Badge status={report.status} />}
-                action={report.status === 'pending' ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    loading={busyId === report._id}
-                    onClick={() => performAction(report._id, () => labReportService.update(report._id, { status: 'in-progress' }))}
-                  >
-                    Start
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    loading={busyId === report._id}
-                    onClick={() => performAction(report._id, () => labReportService.update(report._id, { status: 'completed' }))}
-                  >
-                    Complete
-                  </Button>
-                )}
-              />
-            )) : <EmptyState title="No pending test orders" message="New samples and orders will appear here." />}
           </QueueCard>
         </>
       )}

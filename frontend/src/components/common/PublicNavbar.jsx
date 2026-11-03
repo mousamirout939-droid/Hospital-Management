@@ -12,6 +12,9 @@ const PublicNavbar = () => (
         <Link to="/doctor/login">
           <Button variant="ghost">Doctor Login</Button>
         </Link>
+        <Link to="/receptionist/login">
+          <Button variant="ghost">Receptionist Login</Button>
+        </Link>
         <Link to="/login">
           <Button variant="ghost">Patient Login</Button>
         </Link>
